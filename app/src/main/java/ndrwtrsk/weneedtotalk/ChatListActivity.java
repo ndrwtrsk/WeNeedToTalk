@@ -10,129 +10,107 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 
+import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import ndrwtrsk.weneedtotalk.dummy.DummyContent;
 
 import java.util.List;
 
-/**
- * An activity representing a list of Chats. This activity
- * has different presentations for handset and tablet-size devices. On
- * handsets, the activity presents a list of items, which when touched,
- * lead to a {@link ChatDetailActivity} representing
- * item details. On tablets, the activity presents the list of items and
- * item details side-by-side using two vertical panes.
- */
 public class ChatListActivity extends AppCompatActivity {
 
-    /**
-     * Whether or not the activity is in two-pane mode, i.e. running on a tablet
-     * device.
-     */
+
+    //region Fields
+
+    private static final String TAG = ChatListActivity.class.getCanonicalName();
     private boolean mTwoPane;
+
+    private Integer usersId;
+
+    @BindView(R.id.fab)
+    FloatingActionButton mUiFab;
+
+    @BindView(R.id.userId)
+    EditText mUiUsersId;
+
+    @BindView(R.id.chat_list)
+    RecyclerView mUiChatRecycler;
+
+    private DatabaseReference mDatabase;
+    private ChatsAdapater chatsAdapater;
+    private String emilyKey = "-abba";
+
+//    private FirebaseRecyclerA
+
+    //endregion Fields
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_list);
-
+        ButterKnife.bind(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
-
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        Query myChats = FirebaseDatabase.getInstance().getReference().child("users/"+emilyKey+"/chats");
+        chatsAdapater = new ChatsAdapater(myChats, FirebaseDatabase.getInstance());
+        mUiChatRecycler.setAdapter(chatsAdapater);
+        mUiUsersId.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+            }
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                usersId = Integer.parseInt(charSequence.toString());
+            }
+            @Override
+            public void afterTextChanged(Editable editable) {
             }
         });
-
-        View recyclerView = findViewById(R.id.chat_list);
-        assert recyclerView != null;
-        setupRecyclerView((RecyclerView) recyclerView);
 
         if (findViewById(R.id.chat_detail_container) != null) {
             mTwoPane = true;
         }
     }
 
-    private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(DummyContent.ITEMS));
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
-    public class SimpleItemRecyclerViewAdapter
-            extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
-
-        private final List<DummyContent.DummyItem> mValues;
-
-        public SimpleItemRecyclerViewAdapter(List<DummyContent.DummyItem> items) {
-            mValues = items;
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        usersId = savedInstanceState.getInt("id", -1);
+        Log.d(TAG, "onRestoreInstanceState: restoring: " + usersId);
+        if (usersId != -1){
+            mUiUsersId.setText(usersId.toString());
         }
+    }
 
-        @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.chat_list_content, parent, false);
-            return new ViewHolder(view);
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        if (usersId == null) {
+            return;
         }
-
-        @Override
-        public void onBindViewHolder(final ViewHolder holder, int position) {
-            holder.mItem = mValues.get(position);
-            holder.mIdView.setText(mValues.get(position).id);
-            holder.mContentView.setText(mValues.get(position).content);
-
-            holder.mView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (mTwoPane) {
-                        Bundle arguments = new Bundle();
-                        arguments.putString(ChatDetailFragment.ARG_ITEM_ID, holder.mItem.id);
-                        ChatDetailFragment fragment = new ChatDetailFragment();
-                        fragment.setArguments(arguments);
-                        getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.chat_detail_container, fragment)
-                                .commit();
-                    } else {
-                        Context context = v.getContext();
-                        Intent intent = new Intent(context, ChatDetailActivity.class);
-                        intent.putExtra(ChatDetailFragment.ARG_ITEM_ID, holder.mItem.id);
-
-                        context.startActivity(intent);
-                    }
-                }
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return mValues.size();
-        }
-
-        public class ViewHolder extends RecyclerView.ViewHolder {
-            public final View mView;
-            public final TextView mIdView;
-            public final TextView mContentView;
-            public DummyContent.DummyItem mItem;
-
-            public ViewHolder(View view) {
-                super(view);
-                mView = view;
-                mIdView = (TextView) view.findViewById(R.id.id);
-                mContentView = (TextView) view.findViewById(R.id.content);
-            }
-
-            @Override
-            public String toString() {
-                return super.toString() + " '" + mContentView.getText() + "'";
-            }
-        }
+        outState.putInt("id", usersId);
+        Log.d(TAG, "onSaveInstanceState: saving: " + usersId);
+        super.onSaveInstanceState(outState);
     }
 }
