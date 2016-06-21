@@ -8,7 +8,7 @@ android {
     defaultConfig {
         applicationId "ndrwtrsk.weneedtotalk"
         minSdkVersion 21
-        targetSdkVersion 24
+        targetSdkVersion 21
         versionCode 1
         versionName "1.0"
     }
@@ -29,6 +29,7 @@ dependencies {
 
     apply plugin: 'com.google.gms.google-services'
     compile 'com.google.firebase:firebase-database:9.0.2'
+    compile 'com.firebaseui:firebase-ui-database:0.4.0'
 
     compile 'com.android.support:appcompat-v7:24.0.0'
     compile 'com.android.support:support-v4:24.0.0'

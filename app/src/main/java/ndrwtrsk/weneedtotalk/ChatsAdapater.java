@@ -1,5 +1,7 @@
 package ndrwtrsk.weneedtotalk;
 
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -36,10 +38,12 @@ public class ChatsAdapater
     public List<Chat> chats = new LinkedList<>();
     public List<String> chatsKeys = new ArrayList<>();
 
+    private Context context;
     Query mChatsQuery;
     private FirebaseDatabase db;
 
-    public ChatsAdapater(Query chatsQuery, FirebaseDatabase db) {
+    public ChatsAdapater(Context context, Query chatsQuery, FirebaseDatabase db) {
+        this.context = context;
         mChatsQuery = chatsQuery;
         this.db = db;
         mChatsQuery.addChildEventListener(this);
@@ -67,45 +71,46 @@ public class ChatsAdapater
     public void onChildAdded(DataSnapshot dataSnapshot, final String s) {
         Log.d(TAG, "onChildAdded: ");
         final String val = (String) dataSnapshot.getValue();
-            db.getReference("chats/" + val).addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    if (chatsKeys.contains(val)) {
-                        String changedChatKey = dataSnapshot.getKey();
-                        int changedIndex = chatsKeys.indexOf(changedChatKey);
-                        Chat newChat = dataSnapshot.getValue(Chat.class);
-                        chats.set(changedIndex, newChat);
-                        notifyItemChanged(changedIndex);
-                        return;
-                    }
-                    Chat chat = dataSnapshot.getValue(Chat.class);
-                    Log.d(TAG, "onDataChange: chat title = " + chat.title);
-                    int insertedPos;
-                    if (s == null){
-                        chatsKeys.add(0, val);
-                        chats.add(0, chat);
-                        insertedPos = 0;
+        db.getReference("chats/" + val).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (chatsKeys.contains(val)) {
+                    String changedChatKey = dataSnapshot.getKey();
+                    int changedIndex = chatsKeys.indexOf(changedChatKey);
+                    Chat newChat = dataSnapshot.getValue(Chat.class);
+                    newChat.key = changedChatKey;
+                    chats.set(changedIndex, newChat);
+                    notifyItemChanged(changedIndex);
+                    return;
+                }
+                Chat chat = dataSnapshot.getValue(Chat.class);
+                chat.key = val;
+                int insertedPos;
+                if (s == null) {
+                    chatsKeys.add(0, val);
+                    chats.add(0, chat);
+                    insertedPos = 0;
+                } else {
+                    int previousIndex = chatsKeys.indexOf(s);
+                    int nextIndex = previousIndex + 1;
+                    if (nextIndex == chats.size()) {
+                        chats.add(chat);
+                        chatsKeys.add(val);
                     } else {
-                        int previousIndex = chatsKeys.indexOf(s);
-                        int nextIndex  = previousIndex + 1;
-                        if (nextIndex == chats.size()){
-                            chats.add(chat);
-                            chatsKeys.add(val);
-                        } else {
-                            chats.add(nextIndex, chat);
-                            chatsKeys.add(nextIndex, val);
-                        }
-                        insertedPos = nextIndex;
+                        chats.add(nextIndex, chat);
+                        chatsKeys.add(nextIndex, val);
                     }
-                    notifyItemInserted(insertedPos);
+                    insertedPos = nextIndex;
                 }
+                notifyItemInserted(insertedPos);
+            }
 
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
 
-                }
-            });
-        }
+            }
+        });
+    }
 
     @Override
     public void onChildChanged(DataSnapshot dataSnapshot, String s) {
@@ -147,6 +152,9 @@ public class ChatsAdapater
         @Override
         public void onClick(View view) {
             Log.d(TAG, "onClick: Clicked ChatItemViewHolder");
+            int pos = getAdapterPosition();
+            Intent intent = ChatDetailActivity.getCallingIntent(context, chats.get(pos).key);
+            context.startActivity(intent);
         }
     }
 }

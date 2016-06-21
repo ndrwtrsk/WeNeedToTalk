@@ -69,7 +69,7 @@ public class ChatListActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         toolbar.setTitle(getTitle());
         Query myChats = FirebaseDatabase.getInstance().getReference().child("users/"+emilyKey+"/chats");
-        chatsAdapater = new ChatsAdapater(myChats, FirebaseDatabase.getInstance());
+        chatsAdapater = new ChatsAdapater(this, myChats, FirebaseDatabase.getInstance());
         mUiChatRecycler.setAdapter(chatsAdapater);
         mUiUsersId.addTextChangedListener(new TextWatcher() {
             @Override

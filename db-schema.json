@@ -1,0 +1,36 @@
+{
+  "chats" : {
+    "-abcd" : {
+      "title" : "World",
+      "users" : [ "-abba", "-baba" ]
+    },
+    "-baab" : {
+      "title" : "Hello",
+      "users" : [ "-abba", "-caca" ]
+    }
+  },
+  "chats-messages" : {
+    "-abcd" : {
+      "messages" : {
+        "-paap" : {
+          "message" : "Hi!",
+          "user" : " -abba"
+        }
+      }
+    }
+  },
+  "users" : {
+    "-abba" : {
+      "chats" : [ "-abcd", "-baab" ],
+      "name" : "Emily"
+    },
+    "-baba" : {
+      "chats" : [ "-abcd" ],
+      "name" : "Mary"
+    },
+    "-caca" : {
+      "chats" : [ "-baab" ],
+      "name" : "Victor"
+    }
+  }
+}
